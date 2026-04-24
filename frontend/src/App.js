@@ -3,6 +3,8 @@ import axios from "axios";
 
 function App() {
   const [students, setStudents] = useState([]);
+  const [loading, setLoading] = useState(true);
+
   const [form, setForm] = useState({
     registrationNo: "",
     name: "",
@@ -11,46 +13,63 @@ function App() {
     course: "",
     batch: ""
   });
+
   const [editId, setEditId] = useState(null);
 
   const [filterReg, setFilterReg] = useState("");
   const [filterCourse, setFilterCourse] = useState("");
   const [filterBatch, setFilterBatch] = useState("");
 
+  const API = "https://std-managment-system.onrender.com/api/students";
+
+  // FETCH
   const fetchStudents = async () => {
-    const res = await axios.get("http://localhost:5000/api/students");
-    setStudents(res.data);
+    try {
+      const res = await axios.get(API);
+      setStudents(res.data);
+    } catch (err) {
+      console.log(err);
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
     fetchStudents();
   }, []);
 
+  // ADD / UPDATE
   const handleSubmit = async () => {
-    if (editId) {
-      await axios.put(`http://localhost:5000/api/students/${editId}`, form);
-      setEditId(null);
-    } else {
-      await axios.post("http://localhost:5000/api/students", form);
+    try {
+      if (editId) {
+        await axios.put(`${API}/${editId}`, form);
+        setEditId(null);
+      } else {
+        await axios.post(API, form);
+      }
+
+      setForm({
+        registrationNo: "",
+        name: "",
+        email: "",
+        contact: "",
+        course: "",
+        batch: ""
+      });
+
+      fetchStudents();
+    } catch (err) {
+      console.log(err);
     }
-
-    setForm({
-      registrationNo: "",
-      name: "",
-      email: "",
-      contact: "",
-      course: "",
-      batch: ""
-    });
-
-    fetchStudents();
   };
 
+  // DELETE
   const deleteStudent = async (id) => {
-    await axios.delete(`http://localhost:5000/api/students/${id}`);
+    await axios.delete(`${API}/${id}`);
     fetchStudents();
   };
 
+  // EDIT
   const editStudent = (student) => {
     setForm({
       registrationNo: student.registrationNo || "",
@@ -65,7 +84,7 @@ function App() {
 
   const inputStyle = {
     padding: "12px",
-    borderRadius: "10px",
+    borderRadius: "12px",
     border: "1px solid #ddd",
     flex: "1 1 30%",
     outline: "none",
@@ -74,7 +93,7 @@ function App() {
 
   const actionBtn = {
     padding: "6px 12px",
-    borderRadius: "10px",
+    borderRadius: "12px",
     border: "none",
     color: "white",
     cursor: "pointer",
@@ -88,7 +107,6 @@ function App() {
       padding: "30px",
       fontFamily: "Segoe UI"
     }}>
-
       <div style={{
         maxWidth: "1100px",
         margin: "auto",
@@ -138,13 +156,12 @@ function App() {
             onClick={handleSubmit}
             style={{
               padding: "12px 20px",
-              borderRadius: "25px",
+              borderRadius: "30px",
               background: editId ? "#ff9800" : "#4CAF50",
               color: "white",
               border: "none",
               cursor: "pointer",
-              fontWeight: "bold",
-              boxShadow: "0 3px 10px rgba(0,0,0,0.2)"
+              fontWeight: "bold"
             }}
           >
             {editId ? "Update" : "Add Student"}
@@ -157,9 +174,18 @@ function App() {
           gap: "10px",
           marginBottom: "20px"
         }}>
-          <input placeholder=" Reg No" onChange={(e) => setFilterReg(e.target.value)} style={inputStyle} />
-          <input placeholder=" Course" onChange={(e) => setFilterCourse(e.target.value)} style={inputStyle} />
-          <input placeholder=" Batch" onChange={(e) => setFilterBatch(e.target.value)} style={inputStyle} />
+          <input placeholder="Filter Reg No"
+            onChange={(e) => setFilterReg(e.target.value)}
+            style={inputStyle}
+          />
+          <input placeholder="Filter Course"
+            onChange={(e) => setFilterCourse(e.target.value)}
+            style={inputStyle}
+          />
+          <input placeholder="Filter Batch"
+            onChange={(e) => setFilterBatch(e.target.value)}
+            style={inputStyle}
+          />
         </div>
 
         {/* HEADER */}
@@ -167,8 +193,7 @@ function App() {
           display: "flex",
           padding: "10px",
           fontWeight: "bold",
-          borderBottom: "2px solid #eee",
-          color: "#555"
+          borderBottom: "2px solid #eee"
         }}>
           <span style={{ width: "15%" }}>Reg</span>
           <span style={{ width: "15%" }}>Name</span>
@@ -180,43 +205,48 @@ function App() {
         </div>
 
         {/* LIST */}
-        {students
-          .filter(s =>
-            (s.registrationNo || "").toLowerCase().includes(filterReg.toLowerCase()) &&
-            (s.course || "").toLowerCase().includes(filterCourse.toLowerCase()) &&
-            (s.batch || "").toLowerCase().includes(filterBatch.toLowerCase())
-          )
-          .map((s) => (
-            <div key={s._id} style={{
-              display: "flex",
-              padding: "12px",
-              borderBottom: "1px solid #eee",
-              alignItems: "center",
-              transition: "0.2s",
-            }}>
-              <span style={{ width: "15%" }}>{s.registrationNo}</span>
-              <span style={{ width: "15%" }}>{s.name}</span>
-              <span style={{ width: "20%" }}>{s.email}</span>
-              <span style={{ width: "15%" }}>{s.contact}</span>
-              <span style={{ width: "15%" }}>{s.course}</span>
-              <span style={{ width: "10%" }}>{s.batch}</span>
+        {loading ? (
+          <p style={{ textAlign: "center", marginTop: "20px" }}>
+            🚀 Loading students...
+          </p>
+        ) : (
+          students
+            .filter(s =>
+              (s.registrationNo || "").toLowerCase().includes(filterReg.toLowerCase()) &&
+              (s.course || "").toLowerCase().includes(filterCourse.toLowerCase()) &&
+              (s.batch || "").toLowerCase().includes(filterBatch.toLowerCase())
+            )
+            .map((s) => (
+              <div key={s._id} style={{
+                display: "flex",
+                padding: "12px",
+                borderBottom: "1px solid #eee",
+                alignItems: "center"
+              }}>
+                <span style={{ width: "15%" }}>{s.registrationNo}</span>
+                <span style={{ width: "15%" }}>{s.name}</span>
+                <span style={{ width: "20%" }}>{s.email}</span>
+                <span style={{ width: "15%" }}>{s.contact}</span>
+                <span style={{ width: "15%" }}>{s.course}</span>
+                <span style={{ width: "10%" }}>{s.batch}</span>
 
-              <span style={{ width: "10%", display: "flex", gap: "5px" }}>
-                <button
-                  onClick={() => editStudent(s)}
-                  style={{ ...actionBtn, background: "#2196F3" }}
-                >
-                  Edit
-                </button>
-                <button
-                  onClick={() => deleteStudent(s._id)}
-                  style={{ ...actionBtn, background: "#f44336" }}
-                >
-                  Delete
-                </button>
-              </span>
-            </div>
-          ))}
+                <span style={{ width: "10%", display: "flex", gap: "5px" }}>
+                  <button
+                    onClick={() => editStudent(s)}
+                    style={{ ...actionBtn, background: "#2196F3" }}
+                  >
+                    Edit
+                  </button>
+                  <button
+                    onClick={() => deleteStudent(s._id)}
+                    style={{ ...actionBtn, background: "#f44336" }}
+                  >
+                    Delete
+                  </button>
+                </span>
+              </div>
+            ))
+        )}
       </div>
     </div>
   );
