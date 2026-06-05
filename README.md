@@ -86,8 +86,7 @@ npm start
 ## Live Demo
 
 Frontend:
-https://your-vercel-link.vercel.app
-
+https://std-managment-system.vercel.app/
 Backend API:
 https://std-managment-system.onrender.com/api/students
 
